@@ -10,13 +10,14 @@ response = requests.get(url)
 root = etree.fromstring(response.content)
 
 for flight in root.findall('.//flight'):
-    flight_id = flight.find('.//flight_id').text
-    schedule_time = flight.find('.//schedule_time').text
+    flight_id = flight.find('.//flight_id').text #find flight id in the xml response
+    schedule_time = flight.find('.//schedule_time').text #find schedueled time in the XML, it will be listed in UTC
     schedule_time = datetime.strptime(schedule_time, "%Y-%m-%dT%H:%M:%SZ")
     gmt_1 = pytz.timezone("Europe/Oslo")
-    schedule_time = schedule_time.replace(tzinfo=pytz.utc).astimezone(gmt_1)
+    schedule_time = schedule_time.replace(tzinfo=pytz.utc).astimezone(gmt_1) #Change time to gmt+1
     from_airport = flight.find('.//airport').text
     found = False
+    #search text file first
     with open("flight_data.txt", "r") as file:
         data = file.readlines()
     for line in data:
@@ -26,6 +27,7 @@ for flight in root.findall('.//flight'):
             print(f"Seat count for flight {flight_id} from {from_airport} scheduled at {schedule_time} is: {seat_count}")
             break
     if not found:
+        #if flight id is not found in text file, get the seat numbers from the flightera website
         url = f"https://www.flightera.net/en/flight/{flight_id}"
         res = requests.get(url)
         if "seats" in res.text:
